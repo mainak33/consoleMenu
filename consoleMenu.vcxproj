@@ -163,6 +163,7 @@
   <ItemGroup>
     <ClCompile Include="src\consoleMenu.cpp" />
     <ClCompile Include="src\integerString.cpp" />
+    <ClCompile Include="src\menuNode.cpp" />
     <ClCompile Include="src\osConsole.cpp" />
     <ClCompile Include="src\osName.cpp" />
     <ClCompile Include="src\svUtils.cpp" />

@@ -45,13 +45,16 @@ void svUtils::wrapToLength(
     string_view lines,
     const LineOptions& lineOptions
 ) {
+    if(lines.empty()) return;
+
     auto indent{lineOptions.indent};
     auto maxLineLength{lineOptions.maxLineLength};
     auto delimiter{lineOptions.delimiter};
-    auto startingPositionInLine{lineOptions.startingPositionInLine };
-
+    auto startingPositionInLine{lineOptions.startingPositionInLine % maxLineLength };
+    
     //Adjust indent side if longer than line length
     if(indent.length() >= maxLineLength) indent = indent.substr(0, maxLineLength-1);
+
     // Other Initializations
     size_t indentLength = indent.length();
     size_t delimiterLength = delimiter.length();
@@ -99,11 +102,12 @@ void svUtils::wrapToLength(
 
 
     // Add Indent at the beginning
-    size_t currentPositionInLine{ startingPositionInLine % maxLineLength };
-    string_view currentWord{indent}, restOfLines{lines};
- 
-    addWord(os, currentWord, currentPositionInLine);
-
+    size_t currentPositionInLine{0};
+    string_view currentWord{}, restOfLines{lines};
+    if (startingPositionInLine > 0) {
+        auto currentword = (startingPositionInLine, ' ');
+        addWord(os, currentWord, currentPositionInLine);
+    }
     while (restOfLines.length() > 0) {
         std::tie(currentWord, restOfLines) = splitByDelimiter(restOfLines, delimiter);
 
