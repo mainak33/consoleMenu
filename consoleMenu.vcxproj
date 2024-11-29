@@ -153,7 +153,7 @@
   <ItemGroup>
     <ClInclude Include="includes\integerString.h" />
     <ClInclude Include="includes\ioUtils.h" />
-    <ClInclude Include="includes\menuNode.h" />
+    <ClInclude Include="includes\consoleMenu.h" />
     <ClInclude Include="includes\osConsole.h" />
     <ClInclude Include="includes\osName.h" />
     <ClInclude Include="includes\osUtils.h" />
@@ -163,7 +163,6 @@
   <ItemGroup>
     <ClCompile Include="src\consoleMenu.cpp" />
     <ClCompile Include="src\integerString.cpp" />
-    <ClCompile Include="src\menuNode.cpp" />
     <ClCompile Include="src\osConsole.cpp" />
     <ClCompile Include="src\osName.cpp" />
     <ClCompile Include="src\svUtils.cpp" />
