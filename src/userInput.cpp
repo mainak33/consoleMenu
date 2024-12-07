@@ -1,14 +1,9 @@
 #include "userInput.h"
-#include <iostream> 
 #include <limits> 
 #include <string> 
-#include <type_traits>
-#include <functional> 
 #include <stdexcept> 
 
 namespace ioUtils {
-    using std::cin;
-    using std::cout;
     using std::numeric_limits;
     using std::streamsize;
     using std::exit;
@@ -16,7 +11,6 @@ namespace ioUtils {
     using std::to_string;
     using std::is_integral_v;
     using std::is_floating_point_v;
-    using std::function;
     using std::exception;
 }
 
@@ -103,7 +97,6 @@ static IntegerString stringtoNumber(const string& numberString) {
 }
 
 template <typename T>
-   // requires is_integral_v<T> || is_floating_point_v<T>
 T ioUtils::getNumberInRange(T lowerBound, T upperBound, string_view prompt)
 {
     string defaultPrompt{};
@@ -150,9 +143,21 @@ T ioUtils::getNumberInRange(T lowerBound, T upperBound, string_view prompt)
         return number; 
     }
 }
-
-
-
+void fn(string_view prompt) {
+    auto printPromptFunction = [](string_view prompt){cout << prompt;};
+    auto isValidInputString = [](std::string x, size_t minlen, size_t maxlen) {
+        return (x.length() >= minlen && x.length() <= maxlen);
+    };
+    auto convertStringToOutput = [](std::string str)->int{return std::stoi(str);};
+    int x = getValidInput(
+        function(printPromptFunction),
+        std::make_tuple<>(prompt),
+        function(isValidInputString),
+        std::make_tuple<size_t,size_t>(0,5),
+        function(convertStringToOutput),
+        std::make_tuple<>()
+    );
+}
 template int ioUtils::getNumberInRange(int, int, string_view);
 template double ioUtils::getNumberInRange(double, double, string_view);
 template IntegerString ioUtils::getNumberInRange(IntegerString, IntegerString, string_view);

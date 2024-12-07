@@ -31,6 +31,7 @@ namespace consoleMenu{
     using std::to_string;
     using std::string_view;
     using std::ostream;
+    using namespace std::literals::string_view_literals;
 }
 
 namespace consoleMenu {
@@ -192,19 +193,25 @@ namespace consoleMenu {
     };
 
     class Menu {
-    public:
-        using nodePtrsVector = vector<unique_ptr<MenuNode>>;
-        MenuNode root{
-            std::move(MenuContents{{},{}}),
-            std::move(
-                MenuSettings {
-                        .spaceAfterBullet{1},
-                        .briefIndentSpaces{0},
-                        .detailsIndentSpaces{0},
-                        .maxLineLength{DEFAULT_MAX_LINE_LENGTH},
-                        .hidden{true}
-                    }
-                )
+
+        public:
+
+            using nodePtrsVector = vector<unique_ptr<MenuNode>>;
+            MenuNode root{
+                std::move(MenuContents{{},{}}),
+                std::move(
+                    MenuSettings {
+                            .spaceAfterBullet{1},
+                            .briefIndentSpaces{0},
+                            .detailsIndentSpaces{0},
+                            .maxLineLength{DEFAULT_MAX_LINE_LENGTH},
+                            .hidden{true}
+                        }
+                    )
+                };
+
+            string_view userPrompt(){
+                return "Select Option (enter b to go back a level):"sv;
             };
 
             ostream& getMenuFromRootPath(
@@ -213,10 +220,12 @@ namespace consoleMenu {
             ) {
                 root.hideAllDescendants();
                 root.unhideToPath(path);
-                return root.addBriefs(os);
+                root.addBriefs(os);
+                os << '\n' << userPrompt();
                 return os;
             }
-
+            
+            
             struct RelativePath {
                 span<const unsigned short> commonPath;
                 span<const unsigned short> remainingPath;

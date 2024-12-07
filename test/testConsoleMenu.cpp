@@ -40,9 +40,9 @@ TEST(TestsvUtils, TestwrapToLength) {
     stringstream ostrstream{};
 
     string expectedString{
-        "   string_view lines\n"
-        "   there is a a very\n"
-        "   long line \n"
+        "string_view lines th\n"
+        "   ere is a a very l\n"
+        "   ong line \n"
         "   .Something elseca\n"
         "   nbedone thisisave\n"
         "   rylongcontiguousw\n"
