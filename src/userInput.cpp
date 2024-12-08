@@ -16,38 +16,40 @@ namespace ioUtils {
 
 using namespace ioUtils;
 
-void ioUtils::ignoreInputLine(){
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+void ioUtils::ignoreInputLine(istream& is){
+    if (!isReadable(is)) return;
+    if (is.peek() == std::ios::traits_type::eof()) return;
+    is.ignore(numeric_limits<streamsize>::max(), '\n');
 }
 
-bool ioUtils::hasUnextractedInput(){
-    return !cin.eof() && cin.peek() != '\n';
+bool ioUtils::hasUnextractedInput(istream& is){
+    return isReadable(is) && is.peek() != '\n';
 }
 
-void ioUtils::resetInputStream()
+void ioUtils::resetInputStream(istream& is)
 {
-    // Check for failed extraction
-    if (cin.eof()){ // If the stream was closed
-        exit(0); // Shut down the program now
-    }
+    // If the stream was closed or unrecoverrable error
+    if (!isReadable(is)) return;
 
-    // Let's handle the failure
-    cin.clear(); // Put us back in 'normal' operation mode
-    ignoreInputLine();     // And remove the bad input
+    is.clear(); // Clear failbit
+    ignoreInputLine(is); // Ignore rest of line
 }
 
 
 template <typename T>
     requires requires(T a,T b){ 
         { a >= b };
-        { a < b };
+        { a <= b };
     }
-static bool isInRange(T number, T lowerBound, T upperBound) {
-    return (number >= lowerBound) and (number < upperBound);
+static bool isInRange(const T& number, T lowerBound, T upperBound) {
+    return (number >= lowerBound) and (number <= upperBound);
 }
 
-static void printInvalidInputMessage(function<void()> callback) {
-    cout << "The input provided was invalid.\n";
+static void printInvalidInputMessage(
+    function<void()> callback,
+    ostream & os
+) {
+    os << "The input provided was invalid.\n";
     callback();
 }
 
@@ -68,27 +70,27 @@ static string getDefaultRangePromptMessage(IntegerString lowerBound, IntegerStri
 }
 
 template <typename T>
-static T stringtoNumber(const string& numberString) {
-    return T{stoi(numberString)};
+static T stringtoNumber(string_view numberString) {
+    return T{stoi(move(string(numberString)))};
 }
 
 template <>
-static int stringtoNumber(const string& numberString){
+static int stringtoNumber(string_view numberString){
     IntegerString intString{numberString};
     if (!intString.valid()){ 
         throw exception ("String is not a valid integer");
         return -999;
     };
-    return stoi(numberString);
+    return stoi(move(string(numberString)));
 }
 
 template <>
-static double stringtoNumber(const string& numberString) {
-    return stod(numberString);
+static double stringtoNumber(string_view numberString) {
+    return stod(move(string(numberString)));
 }
 
 template <>
-static IntegerString stringtoNumber(const string& numberString) {
+static IntegerString stringtoNumber(string_view numberString) {
     IntegerString intString{ numberString };
     if (!intString.valid()) {
         throw exception("String is not a valid integer");
@@ -96,68 +98,155 @@ static IntegerString stringtoNumber(const string& numberString) {
     return intString;
 }
 
+//template <typename T>
+//optional<T> ioUtils::getNumberInRange(
+//    T lowerBound, 
+//    T upperBound, 
+//    string_view prompt, 
+//    istream& is, 
+//    ostream& os
+//){
+//    string defaultPrompt{};
+//    string_view promptView{prompt};
+//
+//    if(promptView.empty()) {
+//        defaultPrompt = move(getDefaultRangePromptMessage(lowerBound, upperBound));
+//        promptView = defaultPrompt;
+//    }
+//
+//    auto printPrompt =
+//        [&promptView, &os]() {
+//        os << promptView << '\n';
+//    };
+//
+//    printPrompt();
+//
+//    T number{};
+//    string numberString{};
+//    while (hasUnextractedInput(is)) // Loop until user enters a valid input
+//    {
+//        is >> numberString;
+//        if(!is){ // If the previous extraction failed
+//            resetInputStream(is);
+//            printInvalidInputMessage(printPrompt, os);
+//            continue;
+//        }
+//
+//        try{
+//            number = stringtoNumber<T>(numberString);
+//            if (!isInRange(number, lowerBound, upperBound)) { // Invalid input
+//                resetInputStream(is);
+//                printInvalidInputMessage(printPrompt, os);
+//                continue;
+//            }
+//        }catch(...){
+//            resetInputStream(is);
+//            printInvalidInputMessage(printPrompt, os);
+//            continue;
+//        }
+//
+//        ignoreInputLine(is); 
+//        
+//        return {number}; 
+//    }
+//
+//    return {};
+//}
+
 template <typename T>
-T ioUtils::getNumberInRange(T lowerBound, T upperBound, string_view prompt)
-{
-    string defaultPrompt{};
-    string_view promptView{prompt};
+optional<T> 
+ioUtils::getNumberInRange(
+    T lowerBound,
+    T upperBound,
+    string_view prompt,
+    istream& is,
+    ostream& os
+){
+    
+    auto printPromptFunction = 
+        [&prompt, &lowerBound, &upperBound]
+        (ostream& os){
+            string defaultPrompt{};
+            string_view promptView{ prompt };
 
-    if(promptView.empty()) {
-        defaultPrompt = move(getDefaultRangePromptMessage(lowerBound, upperBound));
-        promptView = defaultPrompt;
-    }
+            if (promptView.empty()) {
+                defaultPrompt = move(getDefaultRangePromptMessage(lowerBound, upperBound));
+                promptView = defaultPrompt;
+            }
 
-    auto printPrompt =
-        [&promptView]() {
-        cout << promptView << '\n';
+            os << promptView << '\n';
     };
 
-    printPrompt();
+    auto printInvalidInputMessage = [](ostream& os){
+        os << "The number provided was invalid.\n";
+    };
 
-    T number{};
-    string numberString{};
-    while (true) // Loop until user enters a valid input
-    {
-        cin >> numberString;
-        if(!cin){ // If the previous extraction failed
-            resetInputStream();
-            printInvalidInputMessage(printPrompt);
-            continue;
-        }
-
-        try{
-            number = stringtoNumber<T>(numberString);
-        }catch(...){
-            resetInputStream();
-            printInvalidInputMessage(printPrompt);
-            continue;
-        }
-
-        if (!isInRange(number, lowerBound, upperBound)) { // Invalid input
-            resetInputStream();
-            printInvalidInputMessage(printPrompt);
-            continue;
-        }
-
-        ignoreInputLine(); 
-        return number; 
-    }
+    auto printErrorMessage = [](ostream& os){
+        os << "No valid number was provided.\n";
+    };
+   
+    return 
+        getValidInput
+        /*<
+            int,
+            int,
+            int
+        >*/
+        (
+            function<void(ostream&)>(printPromptFunction),
+            function<void(ostream&)>(printInvalidInputMessage),
+            function<void(ostream&)>(printErrorMessage),
+            isAlwaysValidInput(),
+            tuple<>{},
+            function<T(string_view)>(stringtoNumber<T>),
+            tuple<>{},
+            function<bool(const T&, T, T)>(isInRange<T>),
+            tuple<T, T>{lowerBound, upperBound},
+            is,
+            os
+        );
 }
-void fn(string_view prompt) {
-    auto printPromptFunction = [](string_view prompt){cout << prompt;};
-    auto isValidInputString = [](std::string x, size_t minlen, size_t maxlen) {
-        return (x.length() >= minlen && x.length() <= maxlen);
-    };
-    auto convertStringToOutput = [](std::string str)->int{return std::stoi(str);};
+
+void fn(
+    string_view prompt, 
+    istream& is, 
+    ostream& os
+){
+    auto printPromptFunction = [&prompt](ostream& os){os << prompt << '\n'; };
+    auto printInvalidInputMessage = [](ostream& os){os << "The input provided was invalid.\n";};
+    auto printErrorMessage = [](ostream& os){os << "NoValid input was provided.\n";};
+    auto isValidInputString = 
+        [](string_view sv, size_t minlen, size_t maxlen) {
+            return (sv.length() >= minlen && sv.length() <= maxlen);
+        };
+
+    auto convertStringToOutput = 
+        [](string_view sv)-> int{
+            return stoi(move(string{sv}));
+        };
+    
+    //auto dontCheckOutput = [](const int& x)->bool{return true;};
+
     int x = getValidInput(
         function(printPromptFunction),
-        std::make_tuple<>(prompt),
-        function(isValidInputString),
-        std::make_tuple<size_t,size_t>(0,5),
+        function(printInvalidInputMessage),
+        function(printErrorMessage),
+        //function(isValidInputString),
+        //make_tuple<size_t,size_t>(0,5),
+        isAlwaysValidInput(),
+        make_tuple<>(),
         function(convertStringToOutput),
-        std::make_tuple<>()
-    );
+        make_tuple<>(),
+        isAlwaysValidOutput<int>(),
+        make_tuple<>()
+    ).value_or(-999);
 }
-template int ioUtils::getNumberInRange(int, int, string_view);
-template double ioUtils::getNumberInRange(double, double, string_view);
-template IntegerString ioUtils::getNumberInRange(IntegerString, IntegerString, string_view);
+
+std::function<bool(string_view)> ioUtils::isAlwaysValidInput() {
+    return function([](string_view sv) { return true; });
+};
+
+
+template optional<int> ioUtils::getNumberInRange(int, int, string_view, istream&, ostream&);
+template optional<double> ioUtils::getNumberInRange(double, double, string_view, istream&, ostream&);
+template optional<IntegerString> ioUtils::getNumberInRange(IntegerString, IntegerString, string_view, istream&, ostream&);
