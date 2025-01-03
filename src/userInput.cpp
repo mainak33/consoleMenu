@@ -71,14 +71,42 @@ static string getDefaultRangePromptMessage(IntegerString lowerBound, IntegerStri
 
 template <typename T>
 static T stringtoNumber(string_view numberString) {
-    return T{stoi(move(string(numberString)))};
+    if(!IntegerString::isInteger(numberString)){
+        throw "String is not a valid integral type";
+    };
+
+    if(std::is_unsigned_v<T> && IntegerString::isNegative(numberString)){
+        throw "String is not a valid unsigned type";
+    }
+
+    string maybeNumber{numberString};
+
+    // Unsigned number type
+    if (std::is_unsigned_v<T>) {
+        auto ullRepresentation = stoull(maybeNumber);
+        if (ullRepresentation > static_cast<unsigned long long>(numeric_limits<T>::max())) {
+            throw "String represents a number greater than the maximum allowed value for the type";
+        }
+        return static_cast<T>(ullRepresentation);
+    }
+        
+    auto llRepresentation = stoll(maybeNumber);
+    if (llRepresentation > static_cast<long long>(numeric_limits<T>::max())) {
+        throw "String represents a number greater than the maximum allowed value for the type";
+    }
+
+    if (llRepresentation < static_cast<long long>(numeric_limits<T>::min())) {
+        throw "String represents a number smaller than the minimum allowed value for the type";
+    }
+    
+    return static_cast<T>(llRepresentation);
 }
 
 template <>
 static int stringtoNumber(string_view numberString){
     IntegerString intString{numberString};
     if (!intString.valid()){ 
-        throw exception ("String is not a valid integer");
+        throw "String is not a valid integer";
         return -999;
     };
     return stoi(move(string(numberString)));
@@ -93,7 +121,7 @@ template <>
 static IntegerString stringtoNumber(string_view numberString) {
     IntegerString intString{ numberString };
     if (!intString.valid()) {
-        throw exception("String is not a valid integer");
+        throw "String is not a valid integer";
     };
     return intString;
 }
@@ -187,11 +215,6 @@ ioUtils::getNumberInRange(
    
     return 
         getValidInput
-        /*<
-            int,
-            int,
-            int
-        >*/
         (
             function<void(ostream&)>(printPromptFunction),
             function<void(ostream&)>(printInvalidInputMessage),
@@ -228,11 +251,9 @@ void fn(
     //auto dontCheckOutput = [](const int& x)->bool{return true;};
 
     int x = getValidInput(
-        function(printPromptFunction),
-        function(printInvalidInputMessage),
-        function(printErrorMessage),
-        //function(isValidInputString),
-        //make_tuple<size_t,size_t>(0,5),
+        printPromptFunction,
+        printInvalidInputMessage,
+        printErrorMessage,
         isAlwaysValidInput(),
         make_tuple<>(),
         function(convertStringToOutput),
@@ -248,5 +269,6 @@ std::function<bool(string_view)> ioUtils::isAlwaysValidInput() {
 
 
 template optional<int> ioUtils::getNumberInRange(int, int, string_view, istream&, ostream&);
+template optional<unsigned short> ioUtils::getNumberInRange(unsigned short, unsigned short, string_view, istream&, ostream&);
 template optional<double> ioUtils::getNumberInRange(double, double, string_view, istream&, ostream&);
 template optional<IntegerString> ioUtils::getNumberInRange(IntegerString, IntegerString, string_view, istream&, ostream&);

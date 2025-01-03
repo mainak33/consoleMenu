@@ -1,5 +1,5 @@
 #include "integerString.h"
-#include <algorithm>
+
 #include <iterator>
 #include <unordered_map>
 #include <stdexcept>
@@ -10,7 +10,6 @@ namespace ioUtils {
     using std::next;
     using std::prev;
     using std::find_if;
-    using std::find_if_not;
     using std::runtime_error;
     using std::abort;
     using std::ios;
@@ -18,53 +17,6 @@ namespace ioUtils {
 }
 
 using namespace ioUtils;
-
-constexpr bool IntegerString::charIsDigit(char a) {
-    if (a >= '0' && a <= '9') return true;
-    return false;
-};
-
-constexpr bool IntegerString::isInteger(string_view maybeInteger) {
-
-    auto beg = maybeInteger.begin();
-
-    // Check if starting character is '+' or '-' and move the beginning iteartor if that is the case
-    if (maybeInteger.at(0) == '+' || maybeInteger.at(0) == '-') {
-        beg = next(beg);
-    }
-
-    // If String is now empty return false
-    if(std::distance(beg, maybeInteger.end()) == size_t{0}) return false;
-
-    // Iterate over all characters and make sure they are digits
-    return
-        find_if_not(
-            beg,
-            maybeInteger.end(),
-            &charIsDigit
-        ) == maybeInteger.end();
-};
-
-
-constexpr unsigned short IntegerString::charToDigit(char a) {
-    if (!charIsDigit(a)) return {};
-    switch(a){
-        case('0') : return 0;
-        case('1') : return 1;
-        case('2') : return 2;
-        case('3') : return 3;
-        case('4') : return 4;
-        case('5') : return 5;
-        case('6') : return 6;
-        case('7') : return 7;
-        case('8') : return 8;
-        case('9') : return 9;
-        default : {
-           throw(runtime_error("Conversion to a digit requested from an invalid character " + a));
-           abort();
-        }
-    };
-};
 
 IntegerString::DigitInString IntegerString::mostSignificantDigit(string_view integer) {
 
@@ -107,18 +59,6 @@ string_view IntegerString::getAbsoluteValueString(string_view maybeInteger) {
     if (!isInteger(maybeInteger)) return {};
     return removeSignAndLeadingZeros(maybeInteger);
 }
-
-bool IntegerString::isNegative(const string_view maybeInteger){
-    if(!maybeInteger.empty() && maybeInteger.at(0) == '-') return true;
-    return false;
-};
-
-
-IntegerString::IntegerString(const string_view number) : 
-numberString{ getAbsoluteValueString(number)},
-negative{isNegative(number)}{
-    if(numberString.empty()) negative = false;
-};
 
 bool IntegerString::operator < (const IntegerString& other) const {
     if (&other == this) return false;
@@ -187,3 +127,9 @@ ostream& ioUtils::operator << (ostream& os, const IntegerString& integerString) 
     os << integerString.toString();
     return os;
 }
+
+IntegerString::IntegerString(const string_view number) : 
+numberString{ getAbsoluteValueString(number)},
+negative{isNegative(number)}{
+    if(numberString.empty()) negative = false;
+};

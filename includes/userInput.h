@@ -104,8 +104,6 @@ namespace ioUtils {
                     printInvalidInputAndRepeatPrompt(os);
                     continue;
                 }
-
-
             }catch (...) {
                 resetInputStream(is);
                 printInvalidInputAndRepeatPrompt(os);
@@ -128,5 +126,6 @@ namespace ioUtils {
 
     extern template optional<int> getNumberInRange(int, int, string_view, istream&, ostream&);
     extern template optional<double> getNumberInRange(double, double, string_view, istream&, ostream&);
+    extern template optional<unsigned short> getNumberInRange(unsigned short, unsigned short, string_view, istream&, ostream&);
     extern template optional<IntegerString> getNumberInRange(IntegerString, IntegerString, string_view, istream&, ostream&);
 }

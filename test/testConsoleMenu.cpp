@@ -14,6 +14,7 @@ using std::string;
 using std::stringstream;
 using std::istringstream;
 using std::ostringstream;
+
 TEST(TestosUtils, TestOS) {
     #if defined(_WIN64)
         EXPECT_TRUE(OS::is(OS::NAME::WINDOWS));
@@ -70,12 +71,29 @@ TEST(TestsvUtils, TestwrapToLength) {
 }
 
 TEST(TestuserInput, TestgetNumberInRange) {
-    istringstream is{2.5};
-    ostringstream os;
+    istringstream istrstream{};
+    ostringstream ostrstream{};
 
-    int x = getNumberInRange<int>(1, 6, "Choose an option from 1 to 5", is, os);
-    //os >> 
-    //cout << "Valid number : " << x << '\n';
-    //IntegerString xi = getNumberInRange<IntegerString>({"1"}, {"3"}, "Choose an option from 1 or 2");
-    //cout << "Valid option : " << xi << '\n';
+    istrstream.str("2.5");
+    auto optionalIntInput = getNumberInRange<int>(1, 6, "Choose an option from 1 to 5", istrstream, ostrstream);
+    ASSERT_FALSE(optionalIntInput.has_value());
+
+
+    istrstream.str("-1");
+    istrstream.clear();
+    optionalIntInput = getNumberInRange<int>(-1, 3, "Choose an option from -1 to 3", istrstream, ostrstream);
+    ASSERT_TRUE(optionalIntInput.has_value());
+    ASSERT_EQ(optionalIntInput.value(), -1);
+
+    istrstream.str("3");
+    istrstream.clear();
+    optionalIntInput = getNumberInRange<int>(-1, 3, "Choose an option from -1 to 3", istrstream, ostrstream);
+    ASSERT_TRUE(optionalIntInput.has_value());
+    ASSERT_EQ(optionalIntInput.value(),3);
+
+    istrstream.str("3");
+    istrstream.clear();
+    optionalIntInput = getNumberInRange<unsigned short>(-1, 3, "Choose an option from -1 to 3", istrstream, ostrstream);
+    ASSERT_TRUE(optionalIntInput.has_value());
+    ASSERT_EQ(optionalIntInput.value(), 3);
 }
